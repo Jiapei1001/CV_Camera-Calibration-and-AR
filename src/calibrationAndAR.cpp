@@ -38,6 +38,8 @@ int main(int argc, char *argv[]) {
     // must pass capdev to frame, to get updated frame size for initiating other Mat as below
     *capdev >> frame;
 
+    Size boardSize(8, 6);
+
     for (;;) {
         *capdev >> frame;  // get a new frame from the camera, treat as a stream
         if (frame.empty()) {
@@ -52,6 +54,9 @@ int main(int argc, char *argv[]) {
         if (key == 'q') {
             break;
         }
+
+        std::vector<Point2f> corner_set = calibration::detectCorners(frame, boardSize);
+        imshow("Video", frame);
     }
 
     delete capdev;

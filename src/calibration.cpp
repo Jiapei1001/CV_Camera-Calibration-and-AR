@@ -60,3 +60,22 @@ std::vector<cv::Point3f> calibration::get3DWorldUnits(cv::Size &boardSize) {
 
     return point_set;
 }
+
+// print out information after camera calibration
+void calibration::printCalibrateCameraInfo(cv::Mat &cameraMatrix, cv::Mat &distCoeffs, double error) {
+    printf("\ncamera matrix:\n");
+    for (int i = 0; i < cameraMatrix.rows; i++) {
+        for (int j = 0; j < cameraMatrix.cols; j++) {
+            printf("%.2lf ", cameraMatrix.at<double>(i, j));
+        }
+        printf("\n");
+    }
+
+    printf("\ndistortion coefficients: [ ");
+    for (int i = 0; i < distCoeffs.rows; i++) {
+        printf("%lf ", distCoeffs.at<double>(i, 0));
+    }
+    printf(" ]\n");
+
+    printf("\nerror: %lf\n\n", error);
+}

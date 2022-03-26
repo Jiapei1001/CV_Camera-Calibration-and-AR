@@ -45,6 +45,24 @@ int main(int argc, char *argv[]) {
     std::vector<std::vector<cv::Point2f> > corner_list;
     int idx = 0;
 
+    // initialize camera matrix
+    double camera_matrix[3][3] = {
+        {1, 0, frame.cols / 2.0},
+        {0, 1, frame.rows / 2.0},
+        {0, 0, 1}};
+    // Make the camera_matrix a 3x3 cv::Mat of type CV_64FC1
+    cv::Mat cameraMatrix(3, 3, CV_64FC1, camera_matrix);
+    cv::Mat distCoeffs = Mat::zeros(8, 1, CV_64F);
+
+    // Output vector of rotation vectors (Rodrigues ) estimated for each pattern view (e.g. std::vector<cv::Mat>>).
+    // That is, each i-th rotation vector together with the corresponding i-th translation vector (see the next output parameter description) brings the calibration pattern from the object coordinate space (in which object points are specified) to the camera coordinate space.
+    // In more technical terms, the tuple of the i-th rotation and translation vector performs a change of basis from object coordinate space to camera coordinate space.
+    // Due to its duality, this tuple is equivalent to the position of the calibration pattern with respect to the camera coordinate space.
+    std::vector<cv::Mat> rvecs;
+
+    // Output vector of translation vectors estimated for each pattern view, see parameter describtion above.
+    std::vector<cv::Mat> tvecs;
+
     for (;;) {
         *capdev >> frame;  // get a new frame from the camera, treat as a stream
         if (frame.empty()) {
@@ -74,6 +92,25 @@ int main(int argc, char *argv[]) {
             string fname = "../data/calibration/image_" + to_string(idx) + ".jpg";
             imwrite(fname, frame);
             idx++;
+        }
+        // calibrate the camera
+        else if (key == 'c') {
+            if (corner_list.size() < 5) {
+                printf("save at least 5 calibration frames\n");
+            } else {
+                // cv::calibrateCamera
+                // https://docs.opencv.org/3.4/d9/d0c/group__calib3d.html#ga3207604e4b1a1758aa66acb6ed5aa65d
+                double error = cv::calibrateCamera(point_list, corner_list, frame.size(), cameraMatrix, distCoeffs, rvecs, tvecs);
+
+                // > half-pixel
+                if (error > 0.5) {
+                    printf("the error should be less than a half-pixel. please reran the calibration images.\n");
+                    break;
+                }
+
+                // Print out the camera matrix and distortion coefficients after the calibration, along with the final re-projection error.
+                calibration::printCalibrateCameraInfo(cameraMatrix, distCoeffs, error);
+            }
         }
 
         imshow("Video", frame);

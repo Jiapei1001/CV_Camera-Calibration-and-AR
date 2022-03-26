@@ -56,6 +56,7 @@ int main(int argc, char *argv[]) {
         }
 
         std::vector<Point2f> corner_set = calibration::detectCorners(frame, boardSize);
+
         imshow("Video", frame);
     }
 

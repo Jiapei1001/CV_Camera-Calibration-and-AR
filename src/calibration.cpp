@@ -26,7 +26,21 @@ std::vector<cv::Point2f> calibration::detectCorners(cv::Mat &src, cv::Size &boar
         Size winSize(5, 5);
         Size zeroZone(-1, -1);
         cv::cornerSubPix(gray, corner_set, winSize, zeroZone, TermCriteria(TermCriteria::EPS + TermCriteria::COUNT, 30, 0.0001));
+
+        // print out the cornet sets
+        printf("new corner set:\n");
+        for (int i = 0; i < boardSize.height; i++) {
+            for (int j = 0; j < boardSize.width; j++) {
+                int x = i * boardSize.height + j;
+                Point2f p = corner_set[x];
+                printf("[%.2f,  %.2f] ", p.x, p.y);
+            }
+            printf("\n");
+        }
     }
+
+    // draw
     cv::drawChessboardCorners(src, boardSize, Mat(corner_set), cornersFound);
+
     return corner_set;
 }

@@ -40,12 +40,19 @@ int main(int argc, char *argv[]) {
 
     Size boardSize(8, 6);
 
+    std::vector<cv::Point3f> point_set;
+    std::vector<std::vector<cv::Point3f> > point_list;
+    std::vector<std::vector<cv::Point2f> > corner_list;
+    int idx = 0;
+
     for (;;) {
         *capdev >> frame;  // get a new frame from the camera, treat as a stream
         if (frame.empty()) {
             printf("frame is empty\n");
             break;
         }
+
+        std::vector<Point2f> corner_set = calibration::detectCorners(frame, boardSize);
 
         // see if there is a waiting keystroke
         char key = cv::waitKey(10);
@@ -54,8 +61,20 @@ int main(int argc, char *argv[]) {
         if (key == 'q') {
             break;
         }
+        // make sure the frame is calibrated
+        else if (key == 's' && corner_set.size() > 0) {
+            // save the corner locations
+            corner_list.push_back(corner_set);
 
-        std::vector<Point2f> corner_set = calibration::detectCorners(frame, boardSize);
+            // create a point_set that specifies the 3D units of the corners in world coordinates
+            point_set = calibration::get3DWorldUnits(boardSize);
+            point_list.push_back(point_set);
+
+            // save the frame as an image
+            string fname = "../data/calibration/image_" + to_string(idx) + ".jpg";
+            imwrite(fname, frame);
+            idx++;
+        }
 
         imshow("Video", frame);
     }

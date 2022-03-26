@@ -28,19 +28,35 @@ std::vector<cv::Point2f> calibration::detectCorners(cv::Mat &src, cv::Size &boar
         cv::cornerSubPix(gray, corner_set, winSize, zeroZone, TermCriteria(TermCriteria::EPS + TermCriteria::COUNT, 30, 0.0001));
 
         // print out the cornet sets
-        printf("new corner set:\n");
-        for (int i = 0; i < boardSize.height; i++) {
-            for (int j = 0; j < boardSize.width; j++) {
-                int x = i * boardSize.height + j;
-                Point2f p = corner_set[x];
-                printf("[%.2f,  %.2f] ", p.x, p.y);
-            }
-            printf("\n");
-        }
+        // printf("new corner set:\n");
+        // for (int i = 0; i < boardSize.height; i++) {
+        //     for (int j = 0; j < boardSize.width; j++) {
+        //         int x = i * boardSize.height + j;
+        //         Point2f p = corner_set[x];
+        //         printf("[%.2f,  %.2f] ", p.x, p.y);
+        //     }
+        //     printf("\n");
+        // }
     }
 
     // draw
     cv::drawChessboardCorners(src, boardSize, Mat(corner_set), cornersFound);
 
     return corner_set;
+}
+
+// Get the 3D world unit coordinates of the chessboard
+std::vector<cv::Point3f> calibration::get3DWorldUnits(cv::Size &boardSize) {
+    vector<cv::Point3f> point_set;
+
+    // Note that if the (0, 0, 0) point is in the upper left corner, then the first point on the next row will be (0, -1, 0)
+    // if the Z-axis comes towards the viewer.
+    for (int i = 0; i < boardSize.height; i++) {
+        for (int j = 0; j < boardSize.width; j++) {
+            // upper left is origin, Z-axis is 0
+            point_set.push_back(Point3f(j, -i, 0));
+        }
+    }
+
+    return point_set;
 }

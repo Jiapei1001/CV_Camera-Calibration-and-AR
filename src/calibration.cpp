@@ -3,6 +3,10 @@
 #include <dirent.h>
 #include <math.h>
 
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <fstream>
 #include <iostream>
 #include <opencv2/opencv.hpp>
 #include <vector>
@@ -10,6 +14,17 @@
 using namespace cv;
 using namespace std;
 using namespace calibration;
+
+// Print out cmd options
+void calibration::printOptions() {
+    // Menu buttons:
+    std::cout << "\nKeys for calibration:" << std::endl;
+    std::cout << "Calibrate a frame and save as an image \t\t -key 's'" << std::endl;
+    std::cout << "Calculate camera calibration \t\t\t -key 'c'" << std::endl;
+    std::cout << "Write calibration info to file \t\t\t -key 'w'" << std::endl;
+    std::cout << "Quit  \t\t\t\t\t\t -key 'q'\n"
+              << std::endl;
+}
 
 // Finds the positions of internal corners of the chessboard.
 std::vector<cv::Point2f> calibration::detectCorners(cv::Mat &src, cv::Size &boardSize) {
@@ -78,4 +93,24 @@ void calibration::printCalibrateCameraInfo(cv::Mat &cameraMatrix, cv::Mat &distC
     printf(" ]\n");
 
     printf("\nerror: %lf\n\n", error);
+}
+
+// write information after camera calibration to file
+void calibration::writeCalibrateCameraInfo2File(cv::Mat &cameraMatrix, cv::Mat &distCoeffs) {
+    ofstream ofile;
+    ofile.open("../data/calibration.txt");
+
+    // https://stackoverflow.com/questions/16312904/how-to-write-a-float-mat-to-a-file-in-opencv
+    for (int i = 0; i < 3; i++) {
+        ofile << cameraMatrix.at<double>(i, 0) << " "
+              << cameraMatrix.at<double>(i, 1) << " "
+              << cameraMatrix.at<double>(i, 2) << endl;
+    }
+
+    for (int i = 0; i < distCoeffs.rows; i++) {
+        ofile << distCoeffs.at<double>(i, 0) << " ";
+    }
+
+    ofile << endl;
+    ofile.close();
 }

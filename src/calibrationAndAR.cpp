@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <opencv2/opencv.hpp>
 #include <vector>
 
@@ -40,6 +41,12 @@ int main(int argc, char *argv[]) {
 
     Size boardSize(8, 6);
 
+    // remove existing calibrated images calculated formerly
+    // https://stackoverflow.com/questions/59077670/c-delete-all-files-and-subfolders-but-keep-the-directory-itself
+    for (const auto &entry : std::__fs::filesystem::directory_iterator("../data/calibration")) {
+        std::__fs::filesystem::remove_all(entry.path());
+    }
+
     std::vector<cv::Point3f> point_set;
     std::vector<std::vector<cv::Point3f> > point_list;
     std::vector<std::vector<cv::Point2f> > corner_list;
@@ -62,6 +69,9 @@ int main(int argc, char *argv[]) {
 
     // Output vector of translation vectors estimated for each pattern view, see parameter describtion above.
     std::vector<cv::Mat> tvecs;
+
+    // Print out cmd options
+    calibration::printOptions();
 
     for (;;) {
         *capdev >> frame;  // get a new frame from the camera, treat as a stream
@@ -110,6 +120,13 @@ int main(int argc, char *argv[]) {
 
                 // Print out the camera matrix and distortion coefficients after the calibration, along with the final re-projection error.
                 calibration::printCalibrateCameraInfo(cameraMatrix, distCoeffs, error);
+            }
+        }
+        // Enable the user to write out the intrinsic parameters to a file: both the camera_matrix and the distortion_ceofficients.
+        else if (key == 'w') {
+            // make sure the camera calibration has been run
+            if (distCoeffs.at<double>(0, 0) != 0) {
+                calibration::writeCalibrateCameraInfo2File(cameraMatrix, distCoeffs);
             }
         }
 

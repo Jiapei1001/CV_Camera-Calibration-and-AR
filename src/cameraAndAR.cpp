@@ -75,6 +75,8 @@ int loadVideo(cv::Mat &cameraMatrix, cv::Mat &distCoeffs) {
 
     Size boardSize(8, 6);
 
+    int idx = 1;
+
     for (;;) {
         *capdev >> frame;  // get a new frame from the camera, treat as a stream
         if (frame.empty()) {
@@ -105,6 +107,15 @@ int loadVideo(cv::Mat &cameraMatrix, cv::Mat &distCoeffs) {
 
             // printRealtimeResult(rvec, tvec);
             ar::project3DAxes(frame, cameraMatrix, distCoeffs, rvec, tvec);
+
+            ar::project3DTriangular(frame, 4, -1, cameraMatrix, distCoeffs, rvec, tvec);
+
+            // save the frame as an image
+            if (key == 'w') {
+                string fname = "../data/ar/image_" + to_string(idx) + ".jpg";
+                imwrite(fname, frame);
+                idx++;
+            }
         }
 
         imshow("Video", frame);

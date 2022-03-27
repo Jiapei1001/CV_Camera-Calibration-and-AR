@@ -17,10 +17,6 @@ using namespace cv;
 using namespace std;
 using namespace ar;
 
-Scalar R = Scalar(0, 0, 255);
-Scalar G = Scalar(0, 255, 0);
-Scalar B = Scalar(255, 0, 0);
-
 // Load camera calibration info from a .txt file
 void ar::readCameraCalibrationInfo(const char *cameraCalibrationFile, cv::Mat &cameraMatrix, std::vector<double> &coeffs) {
     ifstream infile(cameraCalibrationFile);
@@ -88,7 +84,54 @@ void ar::project3DAxes(cv::Mat &frame, cv::Mat &cameraMatrix, cv::Mat &distCoeff
     cv::projectPoints(axesPointsIn3DUnits, rvec, tvec, cameraMatrix, distCoeffs, axesPointsInImage);
 
     // draw axes
-    cv::line(frame, axesPointsInImage[0], axesPointsInImage[1], R, 4);  // x
-    cv::line(frame, axesPointsInImage[0], axesPointsInImage[2], G, 4);  // y
-    cv::line(frame, axesPointsInImage[0], axesPointsInImage[3], B, 4);  // z
+    cv::arrowedLine(frame, axesPointsInImage[0], axesPointsInImage[1], R, 2);  // x
+    cv::arrowedLine(frame, axesPointsInImage[0], axesPointsInImage[2], G, 2);  // y
+    cv::arrowedLine(frame, axesPointsInImage[0], axesPointsInImage[3], B, 2);  // z
+}
+
+// Project 3D Triangular:
+// Reference - https://gist.github.com/MareArts/54011c365ec0d66d59562945df13dbfe
+void ar::project3DTriangular(cv::Mat &frame, float x, float y, cv::Mat &cameraMatrix, cv::Mat &distCoeffs, cv::Mat &rvec, cv::Mat &tvec) {
+    std::vector<Point3f> axesPointsIn3DUnits{
+        {x, y, 0},                 // upper left
+        {x + 2.0f, y, 0},          // upper right
+        {x, y - 2.0f, 0},          // bottom left
+        {x + 2.0f, y - 2.0f, 0},   // bottom right
+        {x, y, 4},                 // upper left
+        {x + 2.0f, y, 4},          // upper right
+        {x, y - 2.0f, 4},          // bottom left
+        {x + 2.0f, y - 2.0f, 4},   // bottom right
+        {x + 1.0f, y - 1.0f, 4}};  // center z
+    std::vector<Point2f> axesPointsInImage;
+
+    cv::projectPoints(axesPointsIn3DUnits, rvec, tvec, cameraMatrix, distCoeffs, axesPointsInImage);
+
+    // draw
+    // cv::rectangle(frame, axesPointsInImage[0], axesPointsInImage[3], YELLOW, cv::FILLED);
+    cv::line(frame, axesPointsInImage[0], axesPointsInImage[1], R, 2);
+    cv::line(frame, axesPointsInImage[1], axesPointsInImage[2], G, 2);
+    cv::line(frame, axesPointsInImage[2], axesPointsInImage[3], B, 2);
+    cv::line(frame, axesPointsInImage[3], axesPointsInImage[0], ORIANGE, 2);
+
+    // top
+    cv::line(frame, axesPointsInImage[4], axesPointsInImage[5], R, 2);
+    cv::line(frame, axesPointsInImage[5], axesPointsInImage[6], G, 2);
+    cv::line(frame, axesPointsInImage[6], axesPointsInImage[7], B, 2);
+    cv::line(frame, axesPointsInImage[7], axesPointsInImage[4], ORIANGE, 2);
+
+    // surround
+    cv::line(frame, axesPointsInImage[0], axesPointsInImage[4], R, 2);
+    cv::line(frame, axesPointsInImage[1], axesPointsInImage[5], G, 2);
+    cv::line(frame, axesPointsInImage[2], axesPointsInImage[6], B, 2);
+    cv::line(frame, axesPointsInImage[3], axesPointsInImage[7], ORIANGE, 2);
+
+    // push points in 2D image into contours
+    std::vector<Point2f> contours;
+    contours.push_back(axesPointsInImage[0]);
+    contours.push_back(axesPointsInImage[1]);
+    contours.push_back(axesPointsInImage[4]);
+
+    // draw filled surface
+    // https://docs.opencv.org/4.x/d6/d6e/group__imgproc__draw.html#ga746c0625f1781f1ffc9056259103edbc
+    // cv::drawContours(frame, contours, 0, ORIANGE, 2);
 }

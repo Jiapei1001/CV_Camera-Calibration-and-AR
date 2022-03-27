@@ -19,8 +19,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 file(GLOB SOURCES "src/*.cpp")
 
 add_executable(calibrationAndAR src/calibrationAndAR.cpp src/calibration.cpp)
-add_executable(AR src/cameraAndAR.cpp src/ar.cpp)
+add_executable(AR src/cameraAndAR.cpp src/ar.cpp src/calibration.cpp)
 
 target_link_libraries(calibrationAndAR ${OpenCV_LIBS})
 target_link_libraries(AR ${OpenCV_LIBS})
-

@@ -17,7 +17,7 @@ using namespace ar;
 void printOptions() {
     // Menu buttons:
     std::cout << "\nKeys for aruco projector:" << std::endl;
-    std::cout << "Detect markers and show their 3D axises \t -key 'm'" << std::endl;
+    std::cout << "Detect markers and show their 3D axises \t -key 'd'" << std::endl;
     std::cout << "Quit  \t\t\t\t\t\t -key 'q'\n"
               << std::endl;
 }
@@ -55,6 +55,126 @@ void detectAndShowMarkers(cv::Mat &cameraMatrix, std::vector<double> &distCoeffs
     }
 }
 
+// Map a source image to the markers' area in the video frame
+void mapImageToMaker(cv::Mat &cameraMatrix, std::vector<double> &distCoeffs) {
+    cv::VideoCapture videoCap;
+    cv::VideoWriter videoWriter;
+
+    videoCap.open(0);
+    cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_6X6_250);
+
+    cv::Mat imgSrc = cv::imread("../data/image_source.jpg");
+    // cv::imshow("image", imgSrc);
+
+    Mat concatenatedOutput;
+    Mat frame;
+
+    while (videoCap.grab()) {
+        cv::Mat image, imageCopy;
+        cv::Mat mappedResult;
+        videoCap.retrieve(image);
+        image.copyTo(imageCopy);
+
+        videoCap >> frame;
+
+        std::vector<int> ids;
+        std::vector<std::vector<cv::Point2f> > corners, failedCandidates;
+
+        // Initialize the detector parameters using default values
+        Ptr<DetectorParameters> parameters = DetectorParameters::create();
+
+        // detect markers
+        // corner index
+        // markerCorners is the list of corners of the detected markers. For each marker, its four corners are returned in their original order (which is clockwise starting with top left).
+        // So, the first corner is the top left corner, followed by the top right, bottom right and bottom left.
+        // https://docs.opencv.org/4.x/d5/dae/tutorial_aruco_detection.html
+        cv::aruco::detectMarkers(frame, dictionary, corners, ids, parameters, failedCandidates);
+
+        // if at least one marker detected
+        if (ids.size() > 0) {
+            // locate the points in the destination frame
+            vector<Point> pts_dst;
+            float scalingFactor = 0.015;  // 0.015;
+
+            Point pt1, pt2, pt3, pt4;
+
+            // top left
+            std::vector<int>::iterator it = std::find(ids.begin(), ids.end(), 12);
+            int index = std::distance(ids.begin(), it);
+            // top left marker's top right corner
+            pt1 = corners.at(index).at(1);
+
+            // top right
+            it = std::find(ids.begin(), ids.end(), 22);
+            index = std::distance(ids.begin(), it);
+            // top right marker's bottom right corner
+            pt2 = corners.at(index).at(2);
+
+            float distance = norm(pt1 - pt2);
+            pts_dst.push_back(Point(pt1.x - round(scalingFactor * distance), pt1.y - round(scalingFactor * distance)));
+            pts_dst.push_back(Point(pt2.x + round(scalingFactor * distance), pt2.y - round(scalingFactor * distance)));
+
+            // bottom right
+            it = std::find(ids.begin(), ids.end(), 32);
+            index = std::distance(ids.begin(), it);
+            // bottom right marker's top left corner
+            pt3 = corners.at(index).at(0);
+            pts_dst.push_back(Point(pt3.x + round(scalingFactor * distance), pt3.y + round(scalingFactor * distance)));
+
+            // bottom left
+            it = std::find(ids.begin(), ids.end(), 32);
+            index = std::distance(ids.begin(), it);
+            // bottom left marker's top left corner
+            pt4 = corners.at(index).at(0);
+            pts_dst.push_back(Point(pt4.x - round(scalingFactor * distance), pt4.y - round(scalingFactor * distance)));
+
+            // corner points of the new source image
+            vector<Point> pts_src;
+            // top left
+            pts_src.push_back(Point(0, 0));
+            // top right
+            pts_src.push_back(Point(imgSrc.cols, 0));
+            // bottom right
+            pts_src.push_back(Point(imgSrc.cols, imgSrc.rows));
+            // bottom left
+            pts_src.push_back(Point(0, imgSrc.rows));
+
+            // calculate homography
+            // A Homography is a transformation ( a 3×3 matrix ) that maps the points in one image to the corresponding points in the other image.
+            // Reference - https://learnopencv.com/homography-examples-using-opencv-python-c/
+            cv::Mat homo = cv::findHomography(pts_src, pts_dst);
+
+            // Map the source image to the mapped image using the homography
+            cv::Mat mappedImage;
+            warpPerspective(imgSrc, mappedImage, homo, frame.size(), INTER_CUBIC);
+
+            // Mask as the region to copy from the mapped image into the original frame
+            cv::Mat mask = Mat::zeros(frame.rows, frame.cols, CV_8UC1);
+            fillConvexPoly(mask, pts_dst, Scalar(255, 255, 255), LINE_AA);
+
+            // Erode the mask to not copy the boundary effects from the mapping process
+            cv::Mat element = getStructuringElement(MORPH_RECT, Size(3, 3));
+            erode(mask, mask, element);
+
+            // Map the new source image into the mask area
+            mappedResult = frame.clone();
+            mappedImage.copyTo(mappedResult, mask);
+
+            // cv::aruco::drawDetectedMarkers(mappedResult, corners, ids);
+
+            hconcat(frame, mappedResult, concatenatedOutput);
+        }
+
+        cv::imshow("out", frame);
+        // videoWriter.write(mappedResult);
+
+        char key = (char)cv::waitKey(10);
+        if (key == 'q' || key == 27) {
+            break;
+        }
+    }
+}
+
 // Entry function to project a new image to the targeted area in the video frame,
 // leveraging the aruco AR library.
 // Reference - https://docs.opencv.org/3.4/d5/dae/tutorial_aruco_detection.html
@@ -75,8 +195,10 @@ int main(int argc, char *argv[]) {
     std::vector<double> coeffs;
     ar::readCameraCalibrationInfo(cameraCalibrationFile, cameraMatrix, coeffs);
 
-    if (strcmp(argv[2], "m") == 0) {
+    if (strcmp(argv[2], "d") == 0) {
         detectAndShowMarkers(cameraMatrix, coeffs);
+    } else if (strcmp(argv[2], "m") == 0) {
+        mapImageToMaker(cameraMatrix, coeffs);
     } else {
         cout << "The specified mode is not correct.\n";
         exit(-1);

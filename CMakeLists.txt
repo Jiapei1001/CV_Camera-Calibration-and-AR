@@ -18,10 +18,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 file(GLOB SOURCES "src/*.cpp")
 
-add_executable(calibrationAndAR src/calibrationAndAR.cpp src/calibration.cpp)
+add_executable(calibrateCamera src/calibrateCamera.cpp src/calibration.cpp)
 add_executable(AR src/cameraAndAR.cpp src/ar.cpp src/calibration.cpp)
 add_executable(harrisCorners src/harrisCorners.cpp)
+add_executable(arucoMakerGenerator src/aruco_maker_generator.cpp)
+add_executable(arucoProjector src/ar.cpp src/aruco_projector.cpp)
 
-target_link_libraries(calibrationAndAR ${OpenCV_LIBS})
+
+target_link_libraries(calibrateCamera ${OpenCV_LIBS})
 target_link_libraries(AR ${OpenCV_LIBS})
 target_link_libraries(harrisCorners ${OpenCV_LIBS})
+target_link_libraries(arucoMakerGenerator ${OpenCV_LIBS})
+target_link_libraries(arucoProjector ${OpenCV_LIBS})

@@ -75,8 +75,7 @@ int loadVideo(cv::Mat &cameraMatrix, cv::Mat &distCoeffs) {
 
     Size boardSize(8, 6);
 
-    int idx = 1;
-
+    int idx = 0;
     for (;;) {
         *capdev >> frame;  // get a new frame from the camera, treat as a stream
         if (frame.empty()) {

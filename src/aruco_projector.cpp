@@ -219,7 +219,7 @@ std::vector<cv::Mat> loadGifToMats() {
         // NOTE: must add '.jpg' suffix
         // https://stackoverflow.com/questions/9868963/cvimwrite-could-not-find-a-writer-for-the-specified-extension
         string name = "image" + to_string(idx++) + ".jpg";
-        cv::imwrite(name, frame);
+        // cv::imwrite(name, frame);
         // NOTE: here must create a temp Mat, deep copying the frame, or all the frames are loaded the same, as the last frame in the GIF
         cv::Mat temp = frame.clone();
         frames.push_back(temp);

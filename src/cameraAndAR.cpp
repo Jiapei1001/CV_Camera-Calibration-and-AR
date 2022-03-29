@@ -104,7 +104,7 @@ int loadVideo(cv::Mat &cameraMatrix, cv::Mat &distCoeffs) {
             // https://docs.opencv.org/3.4/d9/d0c/group__calib3d.html#ga549c2075fac14829ff4a58bc931c033d
             cv::solvePnP(point_set, corner_set, cameraMatrix, distCoeffs, rvec, tvec);
 
-            // printRealtimeResult(rvec, tvec);
+            printRealtimeResult(rvec, tvec);
             ar::project3DAxes(frame, cameraMatrix, distCoeffs, rvec, tvec);
 
             ar::project3DTriangular(frame, 4, -1, cameraMatrix, distCoeffs, rvec, tvec);
@@ -115,6 +115,12 @@ int loadVideo(cv::Mat &cameraMatrix, cv::Mat &distCoeffs) {
                 imwrite(fname, frame);
                 idx++;
             }
+
+            // if (idx < 6) {
+            //     string fname = "../data/ar/borders_" + to_string(idx) + ".jpg";
+            //     imwrite(fname, frame);
+            //     idx++;
+            // }
         }
 
         imshow("Video", frame);

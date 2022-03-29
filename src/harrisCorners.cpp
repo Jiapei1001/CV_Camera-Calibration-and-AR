@@ -33,7 +33,7 @@ void detectAndDrawHarrisCorners(cv::Mat &frame) {
 
     // threshold
     // https://docs.opencv.org/3.4/dc/d0d/tutorial_py_features_harris.html
-    int threshold = 202;
+    int threshold = 180;
     int max_threshold = 255;
 
     cv::Mat normed;
@@ -83,9 +83,14 @@ int videoMode() {
             break;
         }
 
-        detectAndDrawHarrisCorners(frame);
+        cv::Mat frameCopy;
+        frameCopy = frame.clone();
+        detectAndDrawHarrisCorners(frameCopy);
 
-        imshow("Video", frame);
+        cv::Mat concatFrames;
+        hconcat(frame, frameCopy, concatFrames);
+
+        imshow("Video", concatFrames);
     }
 
     delete capdev;
@@ -106,9 +111,15 @@ int imageMode(char *imageFile) {
             cout << "This new image" << imageFile << "cannot be loaded into cv::Mat\n";
             exit(-1);
         }
-        detectAndDrawHarrisCorners(image);
 
-        imshow("Image", image);
+        cv::Mat imageCopy;
+        imageCopy = image.clone();
+        detectAndDrawHarrisCorners(imageCopy);
+
+        cv::Mat concatImages;
+        hconcat(image, imageCopy, concatImages);
+
+        imshow("Image", concatImages);
     } else {
         cout << "This new image" << imageFile << "cannot be loaded.\n";
     }
